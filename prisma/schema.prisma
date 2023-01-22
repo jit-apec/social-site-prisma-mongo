@@ -1,0 +1,79 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  username  String    @unique
+  email     String    @unique
+  password  String
+  phone     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Post      Post[]
+  Comment   Comment[]
+  Like      Like[]
+}
+
+model Post {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  content     String?
+  image       String?
+  author      User      @relation(fields: [authorId], references: [id],onDelete: Cascade)
+  authorId    String    @db.ObjectId
+  createdAt   DateTime  @default(now())
+  Comment     Comment[]
+  Like        Like[]
+
+  @@unique([authorId, title])
+}
+
+model Comment {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  comment String
+
+  subcomment  Comment?   @relation("SubComment", fields: [subId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  nestcomment Comment[] @relation("SubComment") 
+  subId       String?   @db.ObjectId 
+
+  userpost Post   @relation(fields: [postId], references: [id],onDelete: Cascade)
+  postId   String @db.ObjectId
+
+  username User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String @db.ObjectId
+
+  Like Like[]
+}
+
+// model SubComment{
+//   id       String @id @default(auto()) @map("_id") @db.ObjectId
+
+//   replycommnet String
+//   commentId Comment @relation(fields: [replyId], references: [id])
+//   replyId String @db.ObjectId
+// }
+
+model Like {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  userpost Post   @relation(fields: [postId], references: [id],onDelete: Cascade)
+  postId   String @db.ObjectId
+
+  username User   @relation(fields: [userId], references: [id],onDelete: Cascade)
+  userId   String @db.ObjectId
+
+  postcomments Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  commentId    String?  @db.ObjectId
+
+  @@unique([postId, userId])
+  @@unique([userId, commentId, postId])
+}
